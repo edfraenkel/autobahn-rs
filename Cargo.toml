@@ -1,0 +1,6 @@
+[package]
+name = "autobahn"
+version = "0.1.0"
+authors = ["Daniel Fraenkel <e.d.fraenkel@gmail.com>"]
+
+[dependencies]
