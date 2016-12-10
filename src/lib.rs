@@ -9,7 +9,8 @@ extern crate serde;
 #[macro_use] extern crate enum_primitive;
 extern crate num;
 
-mod serialization;
+mod messages_json;
+mod messages;
 
 #[cfg(test)]
 mod tests {
