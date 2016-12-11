@@ -1,13 +1,12 @@
-#![feature(proc_macro, try_from, slice_patterns)]
-#![feature(custom_derive, plugin)]
+#![feature(proc_macro, slice_patterns, custom_derive, plugin)]
 
 
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 extern crate serde;
-
 #[macro_use] extern crate enum_primitive;
 extern crate num;
+extern crate websocket;
 
 mod messages_json;
 mod messages;
