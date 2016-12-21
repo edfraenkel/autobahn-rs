@@ -30,7 +30,7 @@ type URI = String;
 type Dict<S> = BTreeMap<String, S>;
 // Todo: see if we can turn Args<S> etc into Args<Box<MessageArguments>>>
 // trait MessageArgument: Seralize : Deserialize {};
-type Args<S> = Vec<Box>;
+type Args<S> = Vec<S>;
 type KwArgs<S> = BTreeMap<String, S>;
 type Arguments<S> = Option<(Args<S>, Option<KwArgs<S>>)>;
 
