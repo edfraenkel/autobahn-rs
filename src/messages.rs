@@ -15,6 +15,7 @@ impl fmt::Display for MessagingError {
         write!(f, "WAMP Messaging Error: {:?}", self)
     }
 }
+
 impl Error for MessagingError {
     fn description(&self) -> &str {
         "WAMP Messaging Error"
@@ -27,7 +28,9 @@ type Code = isize;
 type ID = u64;
 type URI = String;
 type Dict<S> = BTreeMap<String, S>;
-type Args<S> = Vec<S>;
+// Todo: see if we can turn Args<S> etc into Args<Box<MessageArguments>>>
+// trait MessageArgument: Seralize : Deserialize {};
+type Args<S> = Vec<Box>;
 type KwArgs<S> = BTreeMap<String, S>;
 type Arguments<S> = Option<(Args<S>, Option<KwArgs<S>>)>;
 
@@ -98,7 +101,7 @@ enum_from_primitive! { // This is so ugly! See if this can become a derive with 
     }
 }
 
-pub trait WampMsg<S: Serialize + Deserialize, Format> {
-    fn serialize(&self) -> Result<Format>;
-    fn deserialize(msg_str: &String) -> Result<Message<S>>;
+pub trait WampMessage<S: Serialize + Deserialize, F> {
+    fn serialize(&self) -> Result<F>;
+    fn deserialize(msg_data: &F) -> Result<Message<S>>;
 }

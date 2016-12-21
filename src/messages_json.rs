@@ -4,17 +4,16 @@ use serde_json;
 use num::FromPrimitive;
 
 use messages;
-use messages::{MessagingError, MessageErrorCode};
 
-type Message = messages::Message<serde_json::Value>;
+type MessageJson = messages::Message<serde_json::Value>;
 
-impl From<serde_json::Error> for MessagingError {
-    fn from(err: serde_json::Error) -> MessagingError {
-        MessagingError::SerializationError(Box::new(err))
+impl From<serde_json::Error> for messages::MessagingError {
+    fn from(err: serde_json::Error) -> messages::MessagingError {
+        messages::MessagingError::SerializationError(Box::new(err))
     }
 }
 
-impl messages::WampMsg<serde_json::Value, String> for Message {
+impl messages::WampMessage<serde_json::Value, String> for MessageJson {
     fn serialize(&self) -> messages::Result<String>
     {
         use messages::Message::*;
@@ -74,7 +73,7 @@ impl messages::WampMsg<serde_json::Value, String> for Message {
     // TODO: Revisit this code when the slice patters are not experimental anymore
     // Perhaps some of the macros involving the Box may be removed and can then
     // become part of the match.
-    fn deserialize(msg_str: &String) -> messages::Result<Message> {
+    fn deserialize(msg_str: &String) -> messages::Result<MessageJson> {
         use messages::Message::*;
         use messages::MessageCode as C;
         use serde_json::Value as JValue;
@@ -89,7 +88,7 @@ impl messages::WampMsg<serde_json::Value, String> for Message {
                 if let $i(value) = $x {
                     value // release into local code
                 } else {
-                    return Err(MessagingError::InvalidMessageStructure); // return from function
+                    return Err(messages::MessagingError::InvalidMessageStructure); // return from function
                 }
             }
         }
@@ -105,7 +104,7 @@ impl messages::WampMsg<serde_json::Value, String> for Message {
         macro_rules! a { ($x:expr) => { unwrap_boxed_optional!(JArray, $x) } }
         macro_rules! s { ($x:expr) => { unwrap_boxed_optional!(JString, $x) } }
         macro_rules! u { ($x:expr) => { unwrap_boxed_optional!(JU64, $x) } }
-        macro_rules! e { ($x:expr) => { try_optional!(MessageErrorCode::from_u64(u!($x))) } }
+        macro_rules! e { ($x:expr) => { try_optional!(messages::MessageErrorCode::from_u64(u!($x))) } }
         macro_rules! args {
             () => { None };
             ($args:ident) => { Some((a!($args), None)) };
@@ -113,7 +112,7 @@ impl messages::WampMsg<serde_json::Value, String> for Message {
         }
 
         let msg : Vec<Box<JValue>> = try!(serde_json::from_str(msg_str));
-        if msg.len() < 1 { return Err(MessagingError::InvalidMessageStructure) };
+        if msg.len() < 1 { return Err(messages::MessagingError::InvalidMessageStructure) };
         let msg_enum = try_optional!(C::from_u64(u!(msg[0])));
 
         match (msg_enum, &msg[1..]) {
@@ -151,7 +150,7 @@ impl messages::WampMsg<serde_json::Value, String> for Message {
             (C::YIELD,        &[ref id, ref dict])                                          => Ok(YIELD        (u!(id), o!(dict), args!())),
             (C::YIELD,        &[ref id, ref dict, ref args])                                => Ok(YIELD        (u!(id), o!(dict), args!(args))),
             (C::YIELD,        &[ref id, ref dict, ref args, ref kwargs])                    => Ok(YIELD        (u!(id), o!(dict), args!(args, kwargs))),
-            _ => Err(MessagingError::InvalidMessageStructure)
+            _ => Err(messages::MessagingError::InvalidMessageStructure)
         }
     }
 }

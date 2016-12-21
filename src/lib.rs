@@ -9,9 +9,10 @@ extern crate num;
 extern crate websocket;
 extern crate openssl;
 
-mod messages_json;
 mod messages;
-mod connection;
+mod messages_json;
+//mod connection;
+//mod connection_ws;
 
 #[cfg(test)]
 mod tests {
