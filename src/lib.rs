@@ -11,7 +11,6 @@ extern crate openssl;
 
 mod messages;
 mod messages_json;
-mod message_arguments;
 //mod connection;
 //mod connection_ws;
 

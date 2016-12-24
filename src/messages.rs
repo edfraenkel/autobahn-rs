@@ -7,6 +7,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum MessagingError {
     InvalidMessageStructure,
+    InvalidMessageArgumentStructure,
     SerializationError(Box<Error + Send + Sync>),
 }
 
@@ -28,11 +29,9 @@ type Code = isize;
 type ID = u64;
 type URI = String;
 type Dict<S> = BTreeMap<String, S>;
-// Todo: see if we can turn Args<S> etc into Args<Box<MessageArguments>>>
-// trait MessageArgument: Seralize : Deserialize {};
 type Args<S> = Vec<S>;
 type KwArgs<S> = BTreeMap<String, S>;
-type Arguments<S> = Option<(Args<S>, Option<KwArgs<S>>)>;
+pub type Arguments<S> = Option<(Args<S>, Option<KwArgs<S>>)>;
 
 // Error codes of the WAMP error messages.
 enum_from_primitive! { // This is so ugly! See if this can become a derive with a procedural macro in the future...
@@ -104,4 +103,104 @@ enum_from_primitive! { // This is so ugly! See if this can become a derive with 
 pub trait WampMessage<S: Serialize + Deserialize, F> {
     fn serialize(&self) -> Result<F>;
     fn deserialize(msg_data: &F) -> Result<Message<S>>;
+}
+
+pub trait WampMessageIntermediate<S: Serialize + Deserialize> {
+    fn error0(code: MessageErrorCode, id: ID, dict: Dict<S>, uri: URI) -> Message<S> { 
+        Message::ERROR(code, id, dict, uri, Self::to_arguments0()) 
+    }
+    
+    fn error1<T: Serialize>(code: MessageErrorCode, id: ID, dict: Dict<S>, uri: URI, t: T) -> Message<S> { 
+        Message::ERROR(code, id, dict, uri, Self::to_arguments1(t)) 
+    }
+    
+    fn error2<T: Serialize, U: Serialize>(code: MessageErrorCode, id: ID, dict: Dict<S>, uri: URI, t: T, u: U) -> Message<S> { 
+        Message::ERROR(code, id, dict, uri, Self::to_arguments2(t, u))
+    }
+
+    fn publish0(id: ID, dict: Dict<S>, uri: URI) -> Message<S> { 
+        Message::PUBLISH(id, dict, uri, Self::to_arguments0()) 
+    }
+    
+    fn publish1<T: Serialize>(id: ID, dict: Dict<S>, uri: URI, t: T) -> Message<S> { 
+        Message::PUBLISH(id, dict, uri, Self::to_arguments1(t)) 
+    }
+    
+    fn publish2<T: Serialize, U: Serialize>(id: ID, dict: Dict<S>, uri: URI, t: T, u: U) -> Message<S> { 
+        Message::PUBLISH(id, dict, uri, Self::to_arguments2(t, u))
+    }
+
+    fn event0(id0: ID, id1: ID, dict: Dict<S>) -> Message<S> { 
+        Message::EVENT(id0, id1, dict, Self::to_arguments0()) 
+    }
+    
+    fn event1<T: Serialize>(id0: ID, id1: ID, dict: Dict<S>, t: T) -> Message<S> { 
+        Message::EVENT(id0, id1, dict, Self::to_arguments1(t)) 
+    }
+    
+    fn event2<T: Serialize, U: Serialize>(id0: ID, id1: ID, dict: Dict<S>, t: T, u: U) -> Message<S> { 
+        Message::EVENT(id0, id1, dict, Self::to_arguments2(t, u))
+    }
+
+    fn call0(id: ID, dict: Dict<S>, uri: URI) -> Message<S> { 
+        Message::CALL(id, dict, uri, Self::to_arguments0()) 
+    }
+    
+    fn call1<T: Serialize>(id: ID, dict: Dict<S>, uri: URI, t: T) -> Message<S> { 
+        Message::CALL(id, dict, uri, Self::to_arguments1(t)) 
+    }
+    
+    fn call2<T: Serialize, U: Serialize>(id: ID, dict: Dict<S>, uri: URI, t: T, u: U) -> Message<S> { 
+        Message::CALL(id, dict, uri, Self::to_arguments2(t, u))
+    }
+
+    fn result0(id: ID, dict: Dict<S>) -> Message<S> { 
+        Message::RESULT(id, dict, Self::to_arguments0()) 
+    }
+    
+    fn result1<T: Serialize>(id: ID, dict: Dict<S>, t: T) -> Message<S> { 
+        Message::RESULT(id, dict, Self::to_arguments1(t)) 
+    }
+    
+    fn result2<T: Serialize, U: Serialize>(id: ID, dict: Dict<S>, t: T, u: U) -> Message<S> { 
+        Message::RESULT(id, dict, Self::to_arguments2(t, u))
+    }
+
+    fn invocation0(id0: ID, id1: ID, dict: Dict<S>) -> Message<S> { 
+        Message::INVOCATION(id0, id1, dict, Self::to_arguments0()) 
+    }
+    
+    fn invocation1<T: Serialize>(id0: ID, id1: ID, dict: Dict<S>, t: T) -> Message<S> { 
+        Message::INVOCATION(id0, id1, dict, Self::to_arguments1(t)) 
+    }
+    
+    fn invocation2<T: Serialize, U: Serialize>(id0: ID, id1: ID, dict: Dict<S>, t: T, u: U) -> Message<S> { 
+        Message::INVOCATION(id0, id1, dict, Self::to_arguments2(t, u))
+    }
+
+    fn yield0(id: ID, dict: Dict<S>) -> Message<S> { 
+        Message::YIELD(id, dict, Self::to_arguments0()) 
+    }
+    
+    fn yield1<T: Serialize>(id: ID, dict: Dict<S>, t: T) -> Message<S> { 
+        Message::YIELD(id, dict, Self::to_arguments1(t)) 
+    }
+    
+    fn yield2<T: Serialize, U: Serialize>(id: ID, dict: Dict<S>, t: T, u: U) -> Message<S> { 
+        Message::YIELD(id, dict, Self::to_arguments2(t, u))
+    }
+
+    fn from_arguments0(arguments: Arguments<S>) -> Result<()> {
+        if let None = arguments {
+            Ok(())
+        } else {
+            Err(MessagingError::InvalidMessageArgumentStructure)
+        }
+    }
+    fn from_arguments1<T: Deserialize>(arguments: Arguments<S>) -> Result<(T,)>;
+    fn from_arguments2<T: Deserialize, U: Deserialize>(arguments: Arguments<S>) -> Result<(T, U)>;
+    
+    fn to_arguments0() -> Arguments<S> { None }
+    fn to_arguments1<T: Serialize>(args: T) -> Arguments<S>;
+    fn to_arguments2<T: Serialize, U: Serialize>(args: T, kwargs: U) -> Arguments<S>;   
 }

@@ -1,5 +1,6 @@
 use std::vec::Vec;
 
+use serde::{Serialize, Deserialize};
 use serde_json;
 use num::FromPrimitive;
 
@@ -82,6 +83,7 @@ impl messages::WampMessage<serde_json::Value, String> for MessageJson {
         use serde_json::Value::String as JString;
         use serde_json::Value::U64 as JU64;
 
+
         // Unwrap an enum or return with an error
         macro_rules! try_enum {
             ($i:ident, $x:expr) => {
@@ -151,6 +153,63 @@ impl messages::WampMessage<serde_json::Value, String> for MessageJson {
             (C::YIELD,        &[ref id, ref dict, ref args])                                => Ok(YIELD        (u!(id), o!(dict), args!(args))),
             (C::YIELD,        &[ref id, ref dict, ref args, ref kwargs])                    => Ok(YIELD        (u!(id), o!(dict), args!(args, kwargs))),
             _ => Err(messages::MessagingError::InvalidMessageStructure)
+        }
+    }
+}
+
+impl messages::WampMessageIntermediate<serde_json::Value> for messages::Message<serde_json::Value> {
+    fn from_arguments1<T: Deserialize>(arguments: messages::Arguments<serde_json::Value>) -> 
+        messages::Result<(T,)> 
+    {
+        use serde_json::value::from_value;
+        use serde_json::Value;
+        if let Some((args, None)) = arguments {
+            Ok((
+                try!(from_value(Value::Array(args))), 
+            ))
+        } else {
+            Err(messages::MessagingError::InvalidMessageArgumentStructure)
+        }
+    }
+
+    fn from_arguments2<T: Deserialize, U: Deserialize>(arguments: messages::Arguments<serde_json::Value>) -> 
+        messages::Result<(T, U)> 
+    {
+        use serde_json::value::from_value;
+        use serde_json::Value;
+        if let Some((args, Some(kwargs))) = arguments {
+            Ok((
+                try!(from_value(Value::Array(args))), 
+                try!(from_value(Value::Object(kwargs)))
+            ))
+        } else {
+            Err(messages::MessagingError::InvalidMessageArgumentStructure)
+        }
+    }
+
+    fn to_arguments1<T: Serialize>(args: T) -> messages::Arguments<serde_json::Value> {
+        use serde_json::Value;
+        use serde_json::value::to_value;
+        if let Value::Array(args) = to_value(args) {
+            Some((args, None))
+        } else {
+            // TODO: Find out how it is possible to make this into a compile time error. 
+            // This error should occur onfi if the args is not a type that is serialized 
+            // to a JSON Array. This coul be known at compile time
+            panic!("The args type is not correct. It should serialize to a JSON Array.");
+        }
+    }
+
+    fn to_arguments2<T: Serialize, U: Serialize>(args: T, kwargs: U) -> messages::Arguments<serde_json::Value> {
+        use serde_json::Value;
+        use serde_json::value::to_value;
+        if let (Value::Array(args), Value::Object(kwargs)) = (to_value(args), to_value(kwargs)) {
+            Some((args, Some(kwargs)))
+        } else {
+            // TODO: Find out how it is possible to make this into a compile time error. 
+            // This error should occur onfi if the args is not a type that is serialized 
+            // to a JSON Array. This coul be known at compile time
+            panic!("The args and/or kwargs type are not correct. They should serialize to a JSON Array and Object respectively.");
         }
     }
 }
