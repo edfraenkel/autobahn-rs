@@ -88,7 +88,7 @@ struct ClientConfig {
 }
 
 #[derive(Debug)]
-struct Client<W: Write, R: Read> {
+struct ClientSession<W: Write, R: Read> {
     config: ClientConfig,
     server_roles : BTreeSet<ServerRole>,
     writer : S,
@@ -106,11 +106,11 @@ impl ClientConfig {
         request
     }
 
-    pub fn new_client<S: Write, R: Read>(&self, writer: W, reader: R) -> Result<Client<W, R>> {
+    pub fn new_client<S: Write, R: Read>(&self, writer: W, reader: R) -> Result<ClientSession<W, R>> {
 
     }
 
-    pub fn new_from_ws_request(&self, mut request: WSRequest) -> Result<Client<WSSender, WSReceiver>> {
+    pub fn new_from_ws_request(&self, mut request: WSRequest) -> Result<ClientSession<WSSender, WSReceiver>> {
         let response = ClientConfig::set_request_subprotocol(try!(request), self.serialization_type).send();
         try!(response.validate());
         let (writer, reader) = response.begin().split();
@@ -130,7 +130,7 @@ impl ClientConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::Client;
+    use super::ClientSession;
     use super::WAMPClient;
     use super::SerializationType;
     use websocket::client::request::Url;
