@@ -2,30 +2,12 @@ use messages::base_message::{BaseMessage, MessageContent, ToIntermediate, Encode
 use serde_json::value::Value;
 use serde_json::to_value;
 use serde_json::to_string;
+use std::result;
 
 #[derive(Debug)]
-pub enum MessagingError {
-    InvalidMessageStructure,
-    InvalidMessageArgumentStructure,
-    SerializationError(Box<Error + Send + Sync>),
-}
-
-
-impl fmt::Display for JSONMessageError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "WAMP JSON Messaging Error: {:?}", self)
-    }
-}
-
-impl Error for JSONMessageError {
-    fn description(&self) -> &str {
-        "WAMP JSON Messaging Error"
-    }
-}
-
-pub type Result<T> = result::Result<T, JSONError>;
-pub type JSONEncoding = Result<String>;
-
+enum JSONMessageError {}
+type Result<T> = result::Result<T, JSONMessageError>;
+pub type JSONEncodingResult = Result<String>;
 
 impl ToIntermediate<Value> for MessageContent<Value> {
     fn to_intermediate(self) -> Vec<Value> {        
@@ -52,9 +34,9 @@ impl ToIntermediate<Value> for BaseMessage<Value> {
     }
 }
 
-impl Encode<JSONEncoding> for BaseMessage<Value> {
-    fn encode(self) -> JSONEncoding {
-        JSONEncoding::Ok(to_string(&Value::Array(self.to_intermediate())).expect("Serialization failed."))
+impl Encode<JSONEncodingResult> for BaseMessage<Value> {
+    fn encode(self) -> JSONEncodingResult {
+        Ok(to_string(&Value::Array(self.to_intermediate())).expect("Serialization failed."))
     }
 }
 
@@ -62,6 +44,18 @@ impl Decode<Value> for str {
     fn decode(&self) -> BaseMessage<Value> {
 //        let message_vec : Vec<Value> = from_string(str);
 
-        BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::Object(Map::new())), arguments: ()})
+        BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::I64(3)), arguments: ()})
     }
 }
+
+// impl fmt::Display for JSONMessageError {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "WAMP JSON Messaging Error: {:?}", self)
+//     }
+// }
+
+// impl Error for JSONMessageError {
+//     fn description(&self) -> &str {
+//         "WAMP JSON Messaging Error"
+//     }
+// }

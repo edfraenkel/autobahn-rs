@@ -9,7 +9,7 @@ use messages::base_message::{BaseMessage, Encode};
 
 pub mod json {
     use super::*;
-    use messages::base_json::JSONEncoding;
+    use messages::base_json::JSONEncodingResult;
     use serde_json::value::Value;
 
     pub type Message = BaseMessage<Value>;
