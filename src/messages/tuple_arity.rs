@@ -1,9 +1,11 @@
 // Strange that rust doesn't seem have these...
 pub trait Arity {
+    const ARITY : usize;
     fn arity(&self) -> usize;
 }
 
 impl Arity for () {
+    const ARITY: usize = 0;
     fn arity(&self) -> usize { 0 }
 }
 
@@ -11,7 +13,8 @@ macro_rules! tuple_arity_impl {
     ( $( ($($T:ident ),+ ) => $num:tt)+ ) => {
         $(
             impl<$($T, )+> Arity for ($($T, )+) {
-                fn arity(&self) -> usize { $num }        
+                const ARITY: usize = $num;
+                fn arity(&self) -> usize { Self::ARITY }        
             }
         )+
     }

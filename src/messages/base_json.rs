@@ -1,60 +1,68 @@
-use messages::base_message::{BaseMessage, MessageContent, ToIntermediate, Encode, Decode};
+use messages::base_message::{BaseMessage, MessageContent, MessageCode, ToIntermediate, Encode, Decode};
+use serde_json;
 use serde_json::value::Value;
 use serde_json::{to_value, to_string, from_str};
 use std::result;
 
-#[derive(Debug)]
-enum JSONMessageError {}
-type Result<T> = result::Result<T, JSONMessageError>;
-pub type JSONEncodingResult = Result<String>;
+error_chain! {
+    foreign_links {
+        SerdeJSONError(serde_json::Error);
+    }
 
-impl ToIntermediate<Value> for MessageContent<Value> {
-    fn to_intermediate(self) -> Vec<Value> {        
-        to_value(&self.message).as_array().expect(
-            "MessageContent::message should always serialize to a JSON array.")[..].into()
+    errors {
+        MessageContentError(t: String) {
+            description("invalid message content")
+            display("invalid message content: '{}'", t)
+        }
     }
 }
 
-impl ToIntermediate<Value> for MessageContent<Value, Vec<Value>> {
-    fn to_intermediate(self) -> Vec<Value> {
-        let mut message_content : Vec<Value> = to_value(&self.message).as_array().expect(
-            "MessageContent::message should always serialize to a JSON array.")[..].into();
-        message_content.extend(self.arguments);
-        message_content
+impl ToIntermediate<Value, Error> for MessageContent<Value> {
+    fn to_intermediate(self) -> Result<Vec<Value>> {
+        if let Value::Array(array) = self.message {
+            Ok(array[..].into())
+        } else {
+            Err(ErrorKind::MessageContentError("JSON message should always serialize to a JSON array".into()).into())
+        }
     }
 }
 
-impl ToIntermediate<Value> for BaseMessage<Value> {
-    fn to_intermediate(self) -> Vec<Value> {
+impl ToIntermediate<Value, Error> for MessageContent<Value, Vec<Value>> {
+    fn to_intermediate(self) -> Result<Vec<Value>> {
+        if let Value::Array(array) = self.message {
+            let mut message_content : Vec<Value> = array[..].into();
+            message_content.extend(self.arguments);
+            Ok(message_content)
+        } else {
+            Err(ErrorKind::MessageContentError("JSON message should always serialize to a JSON array".into()).into())
+        }
+    }
+}
+
+impl ToIntermediate<Value, Error> for BaseMessage<Value> {
+    fn to_intermediate(self) -> Result<Vec<Value>> {
         let message_id = Value::I64(self.message_info().0 as i64);
-        let mut message = self.to_intermediate();
+        let mut message = self.to_intermediate()?;
         message.insert(0, message_id);
-        message
+        Ok(message)
     }
 }
 
-impl Encode<JSONEncodingResult> for BaseMessage<Value> {
-    fn encode(self) -> JSONEncodingResult {
-        Ok(to_string(&Value::Array(self.to_intermediate())).expect("Serialization failed."))
+impl Encode<String, Error> for BaseMessage<Value> {
+    fn encode(self) -> Result<String> {
+        Ok(to_string(&Value::Array(self.to_intermediate()?))?)
     }
 }
 
-impl Decode<Value> for str {
-    fn decode(&self) -> BaseMessage<Value> {
-        let message_vec : Vec<Value> = from_str(self).unwrap();
-
-        BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::I64(3)), arguments: ()})
+impl Decode<String, Error> for BaseMessage<Value> {
+    fn decode(serialized_data: String) -> Result<BaseMessage<Value>> {
+        let message_vec : Vec<Value> = from_str(&serialized_data[..])?;
+        Ok(BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::I64(3)), arguments: ()}))
     }
 }
 
-// impl fmt::Display for JSONMessageError {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "WAMP JSON Messaging Error: {:?}", self)
-//     }
-// }
+// fn decode_json_str_to_base_message(&str) -> Result<Value> {
+//     let message_vec : Vec<Value> = from_str(self).unwrap();
 
-// impl Error for JSONMessageError {
-//     fn description(&self) -> &str {
-//         "WAMP JSON Messaging Error"
-//     }
+//     BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::I64(3)), arguments: ()})
 // }

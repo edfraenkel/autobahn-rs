@@ -75,7 +75,7 @@ pub enum BaseMessage<A> {
 }
 
 impl<A> BaseMessage<A> {
-    /// Returns the arity of the message (without ID and optional arguments) and it's corresponding WAMP code
+    /// Returns the wamp message ID and the arity of the message (minus the ID and optional arguments) 
     pub fn message_info(&self) -> (MessageCode, usize) {
         use self::BaseMessage::*;
         macro_rules! matcher {
@@ -92,16 +92,21 @@ impl<A> BaseMessage<A> {
 }
 
 
-pub trait ToIntermediate<T> {
-    fn to_intermediate(self) -> Vec<T>;
+pub trait ToIntermediate<T, E> {
+    fn to_intermediate(self) -> Result<Vec<T>, E>;
 }
 
-// Encode message to serialized data
-pub trait Encode<D> {
-    fn encode(self) -> D;
+
+// Encode a message to a serialized data type such as a string or a str or a binary blob
+// D: Data type
+// E: Error type
+pub trait Encode<D, E> {
+    fn encode(self) -> Result<D, E>;
 }
 
-// Decode serialized data to base message
-pub trait Decode<V> {
-    fn decode(&self) -> BaseMessage<V>;
+// Decode a serialized binary blob, string or str or any other formmat to a message
+// D: Data type
+// E: Error type
+pub trait Decode<D, E> {
+    fn decode(serialized_data: D) -> Result<Self, E> where Self: Sized;
 }
