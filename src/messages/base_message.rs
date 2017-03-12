@@ -5,9 +5,6 @@ use std::result;
 use std::error::Error;
 use std::fmt;
 
-type ID = u64;
-type URI = String;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MessageCode {
     HELLO        = 1,
@@ -49,29 +46,57 @@ pub struct MessageContent<T, A=()> {
     pub arguments: A,
 }
 
+mod message_content_types {
+    use super::MessageContent;
+    use super::MessageErrorCode;
+    type ID = u64;
+    type URI = String;
+
+    pub type HELLO<A>        = MessageContent<(URI, A)>;
+    pub type WELCOME<A>      = MessageContent<(ID, A)>;
+    pub type ABORT<A>        = MessageContent<(A, URI)>;
+    pub type GOODBYE<A>      = MessageContent<(A, URI)>;
+    pub type ERROR<A>        = MessageContent<(MessageErrorCode, ID, A, URI), Vec<A>>;
+    pub type PUBLISH<A>      = MessageContent<(ID, A, URI), Vec<A>>;
+    pub type PUBLISHED       = MessageContent<(ID, ID)>;
+    pub type SUBSCRIBE<A>    = MessageContent<(ID, A, URI)>;
+    pub type SUBSCRIBED      = MessageContent<(ID, ID)>;
+    pub type UNSUBSCRIBE     = MessageContent<(ID, ID)>;
+    pub type UNSUBSCRIBED    = MessageContent<(ID,)>;
+    pub type EVENT<A>        = MessageContent<(ID, ID, A), Vec<A>>;
+    pub type CALL<A>         = MessageContent<(ID, A, URI), Vec<A>>;
+    pub type RESULT<A>       = MessageContent<(ID, A), Vec<A>>;
+    pub type REGISTER<A>     = MessageContent<(ID, A, URI)>;
+    pub type REGISTERED      = MessageContent<(ID, ID)>;
+    pub type UNREGISTER      = MessageContent<(ID, ID)>;
+    pub type UNREGISTERED    = MessageContent<(ID,)>;
+    pub type INVOCATION<A>   = MessageContent<(ID, ID, A), Vec<A>>;
+    pub type YIELD<A>        = MessageContent<(ID, A), Vec<A>>;
+}
+
 // Enum specifying the id of the message
 #[derive(Debug)]
 pub enum BaseMessage<A> {
-    HELLO        (MessageContent<(URI, A)>),
-    WELCOME      (MessageContent<(ID, A)>),
-    ABORT        (MessageContent<(A, URI)>),
-    GOODBYE      (MessageContent<(A, URI)>),
-    ERROR        (MessageContent<(MessageErrorCode, ID, A, URI), Vec<A>>),
-    PUBLISH      (MessageContent<(ID, A, URI), Vec<A>>),
-    PUBLISHED    (MessageContent<(ID, ID)>),
-    SUBSCRIBE    (MessageContent<(ID, A, URI)>),
-    SUBSCRIBED   (MessageContent<(ID, ID)>),
-    UNSUBSCRIBE  (MessageContent<(ID, ID)>),
-    UNSUBSCRIBED (MessageContent<(ID,)>),
-    EVENT        (MessageContent<(ID, ID, A), Vec<A>>),
-    CALL         (MessageContent<(ID, A, URI), Vec<A>>),
-    RESULT       (MessageContent<(ID, A), Vec<A>>),
-    REGISTER     (MessageContent<(ID, A, URI)>),
-    REGISTERED   (MessageContent<(ID, ID)>),
-    UNREGISTER   (MessageContent<(ID, ID)>),
-    UNREGISTERED (MessageContent<(ID,)>),
-    INVOCATION   (MessageContent<(ID, ID, A), Vec<A>>),
-    YIELD        (MessageContent<(ID, A), Vec<A>>),
+    HELLO        (message_content_types::HELLO<A>       ),
+    WELCOME      (message_content_types::WELCOME<A>     ),
+    ABORT        (message_content_types::ABORT<A>       ),
+    GOODBYE      (message_content_types::GOODBYE<A>     ),
+    ERROR        (message_content_types::ERROR<A>       ),
+    PUBLISH      (message_content_types::PUBLISH<A>     ),
+    PUBLISHED    (message_content_types::PUBLISHED      ),
+    SUBSCRIBE    (message_content_types::SUBSCRIBE<A>   ),
+    SUBSCRIBED   (message_content_types::SUBSCRIBED     ),
+    UNSUBSCRIBE  (message_content_types::UNSUBSCRIBE    ),
+    UNSUBSCRIBED (message_content_types::UNSUBSCRIBED   ),
+    EVENT        (message_content_types::EVENT<A>       ),
+    CALL         (message_content_types::CALL<A>        ),
+    RESULT       (message_content_types::RESULT<A>      ),
+    REGISTER     (message_content_types::REGISTER<A>    ),
+    REGISTERED   (message_content_types::REGISTERED     ),
+    UNREGISTER   (message_content_types::UNREGISTER     ),
+    UNREGISTERED (message_content_types::UNREGISTERED   ),
+    INVOCATION   (message_content_types::INVOCATION<A>  ),
+    YIELD        (message_content_types::YIELD<A>       ),
 }
 
 impl<A> BaseMessage<A> {
