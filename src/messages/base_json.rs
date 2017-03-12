@@ -1,7 +1,6 @@
 use messages::base_message::{BaseMessage, MessageContent, ToIntermediate, Encode, Decode};
 use serde_json::value::Value;
-use serde_json::to_value;
-use serde_json::to_string;
+use serde_json::{to_value, to_string, from_str};
 use std::result;
 
 #[derive(Debug)]
@@ -42,7 +41,7 @@ impl Encode<JSONEncodingResult> for BaseMessage<Value> {
 
 impl Decode<Value> for str {
     fn decode(&self) -> BaseMessage<Value> {
-//        let message_vec : Vec<Value> = from_string(str);
+        let message_vec : Vec<Value> = from_str(self).unwrap();
 
         BaseMessage::HELLO(MessageContent{message: (String::from("cheeze"), Value::I64(3)), arguments: ()})
     }

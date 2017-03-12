@@ -75,30 +75,19 @@ pub enum BaseMessage<A> {
 }
 
 impl<A> BaseMessage<A> {
+    /// Returns the arity of the message (without ID and optional arguments) and it's corresponding WAMP code
     pub fn message_info(&self) -> (MessageCode, usize) {
         use self::BaseMessage::*;
-        match self {
-            &HELLO        (ref m) => (MessageCode::HELLO, m.message.arity()),
-            &WELCOME      (ref m) => (MessageCode::WELCOME, m.message.arity()),
-            &ABORT        (ref m) => (MessageCode::ABORT, m.message.arity()),
-            &GOODBYE      (ref m) => (MessageCode::GOODBYE, m.message.arity()),
-            &ERROR        (ref m) => (MessageCode::ERROR, m.message.arity()),
-            &PUBLISH      (ref m) => (MessageCode::PUBLISH, m.message.arity()),
-            &PUBLISHED    (ref m) => (MessageCode::PUBLISHED, m.message.arity()),
-            &SUBSCRIBE    (ref m) => (MessageCode::SUBSCRIBE, m.message.arity()),
-            &SUBSCRIBED   (ref m) => (MessageCode::SUBSCRIBED, m.message.arity()),
-            &UNSUBSCRIBE  (ref m) => (MessageCode::UNSUBSCRIBE, m.message.arity()),
-            &UNSUBSCRIBED (ref m) => (MessageCode::UNSUBSCRIBED, m.message.arity()),
-            &EVENT        (ref m) => (MessageCode::EVENT, m.message.arity()),
-            &CALL         (ref m) => (MessageCode::CALL, m.message.arity()),
-            &RESULT       (ref m) => (MessageCode::RESULT, m.message.arity()),
-            &REGISTER     (ref m) => (MessageCode::REGISTER, m.message.arity()),
-            &REGISTERED   (ref m) => (MessageCode::REGISTERED, m.message.arity()),
-            &UNREGISTER   (ref m) => (MessageCode::UNREGISTER, m.message.arity()),
-            &UNREGISTERED (ref m) => (MessageCode::UNREGISTERED, m.message.arity()),
-            &INVOCATION   (ref m) => (MessageCode::INVOCATION, m.message.arity()),
-            &YIELD        (ref m) => (MessageCode::YIELD, m.message.arity()),
-        }        
+        macro_rules! matcher {
+            ($( $X:ident ),+) => {
+                match self {
+                    $( &$X (ref m) => (MessageCode::$X, m.message.arity()), )+ 
+                }
+            }
+        }
+        matcher!(HELLO, WELCOME, ABORT, GOODBYE, ERROR, PUBLISH, PUBLISHED, SUBSCRIBE, SUBSCRIBED, 
+            UNSUBSCRIBE, UNSUBSCRIBED, EVENT, CALL, RESULT, REGISTER, REGISTERED, UNREGISTER, UNREGISTERED, 
+            INVOCATION, YIELD)
     }
 }
 
